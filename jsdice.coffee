@@ -68,11 +68,18 @@ $ ->
     diceGroup.translateZ(-BOARD/2 + DICE/2)
     scene.add(diceGroup)
 
-    cubeMaterial = new THREE.MeshLambertMaterial({ color: 0xCC0000 })
+    cubeMaterial = new THREE.MeshFaceMaterial([
+        new THREE.MeshBasicMaterial({ color: 0xFF0000 }),
+        new THREE.MeshBasicMaterial({ color: 0x00FF00 }),
+        new THREE.MeshBasicMaterial({ color: 0x0000FF }),
+        new THREE.MeshBasicMaterial({ color: 0x00FFFF }),
+        new THREE.MeshBasicMaterial({ color: 0xFF00FF }),
+        new THREE.MeshBasicMaterial({ color: 0xFFFF00 }),
+    ])
     cubeGeom = new THREE.CubeGeometry(DICE, DICE, DICE)
-    cubeGeom.applyMatrix(new Matrix4().makeTranslation(0, DICE/2, 0))
 
     cube = window.cube = new THREE.Mesh(cubeGeom, cubeMaterial)
+    cube.position.y = DICE/2
     diceGroup.add(cube)
 
     # start the renderer
@@ -86,6 +93,12 @@ $ ->
     cubeRotationAxis = undefined
     cubeTranslatedMatrix = undefined
 
+    calculateDiceNumber = (dice) ->
+        for face in dice.geometry.faces
+            dp = face.normal.dot(new Vector3(0, 1, 0))
+            if dp > 0.2
+                console.log(face.normal, dice.material.materials[face.materialIndex].color)
+
     render = ->
         if cubeRotationDir
             cubeRotationAmount += 0.05
@@ -97,13 +110,20 @@ $ ->
             if cubeRotationAmount > 1
                 inv = new Matrix4().getInverse(cubeTranslatedMatrix)
                 cube.geometry.applyMatrix(inv)
+                cube.geometry.applyMatrix(new Matrix4().makeRotationFromEuler(cube.rotation))
                 cube.geometry.verticesNeedUpdate = true
+                cube.geometry.elementsNeedUpdate = true
+                cube.geometry.normalsNeedUpdate = true
+                cube.geometry.computeFaceNormals()
 
                 cube.position.add(cubeRotationDir)
                 cube.position.add(cubeRotationDir.clone().multiplyScalar(-1/2))
-                cube.rotation = new Euler()
+                cube.position.y = DICE/2
 
+                cube.rotation.set(0, 0, 0)
                 cubeRotationDir = undefined
+                calculateDiceNumber(cube)
+
         requestAnimationFrame(render)
         renderer.render(scene, camera)
     render()
@@ -115,8 +135,8 @@ $ ->
             cubeRotationAmount = 0
             cubeRotationAxis = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2)
 
-            cubeTranslatedMatrix = new Matrix4().makeTranslation(-dir.x/2, 0, -dir.z/2)
-            cube.position.add(new Vector3(dir.x/2, 0, dir.z/2))
+            cubeTranslatedMatrix = new Matrix4().makeTranslation(-dir.x/2, DICE/2, -dir.z/2)
+            cube.position.add(new Vector3(dir.x/2, -DICE/2, dir.z/2))
             cube.geometry.applyMatrix(cubeTranslatedMatrix)
             cube.geometry.verticesNeedUpdate = true
 
