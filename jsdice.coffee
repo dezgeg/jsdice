@@ -49,7 +49,18 @@ $ ->
     scene.add(ambientLight)
 
     # plane
-    planeMaterial = new THREE.MeshLambertMaterial({ color: 0xCCCCCC })
+    planeTexture = new THREE.ImageUtils.loadTexture('images/grid0.png')
+    planeTexture.wrapS = planeTexture.wrapT = THREE.RepeatWrapping
+    planeTexture.repeat.set(BOARD, BOARD)
+    planeTopMaterial = new THREE.MeshLambertMaterial({ map: planeTexture })
+    planeMaterial = new THREE.MeshFaceMaterial([
+        new THREE.MeshLambertMaterial({ color: 0xCCCCCC }),
+        new THREE.MeshLambertMaterial({ color: 0xCCCCCC }),
+        planeTopMaterial
+        new THREE.MeshLambertMaterial({ color: 0xCCCCCC }),
+        new THREE.MeshLambertMaterial({ color: 0xCCCCCC }),
+        new THREE.MeshLambertMaterial({ color: 0xCCCCCC }),
+    ])
     plane = new THREE.Mesh(new THREE.CubeGeometry(BOARD, DICE, BOARD), planeMaterial)
     scene.add(plane)
 
