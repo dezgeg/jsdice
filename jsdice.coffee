@@ -1,5 +1,6 @@
 Vector3 = THREE.Vector3
 Matrix4 = THREE.Matrix4
+Euler = THREE.Euler
 
 KeyCode =
     Left:   37
@@ -67,14 +68,16 @@ $ ->
     # container for die
     diceGroup = new THREE.Object3D()
     diceGroup.translateX(-BOARD/2 + DICE/2)
+    diceGroup.translateY(DICE/2)
     diceGroup.translateZ(-BOARD/2 + DICE/2)
     scene.add(diceGroup)
 
     cubeMaterial = new THREE.MeshLambertMaterial({ color: 0xCC0000 })
     cubeGeom = new THREE.CubeGeometry(DICE, DICE, DICE)
-    cubeGeom.applyMatrix(new Matrix4().makeTranslation(0, DICE, 0))
+    cubeGeom.applyMatrix(new Matrix4().makeTranslation(0, DICE/2, 0))
 
     cube = new THREE.Mesh(cubeGeom, cubeMaterial)
+    window.cube = cube
     diceGroup.add(cube)
 
     # start the renderer
@@ -83,20 +86,50 @@ $ ->
     # attach the render-supplied DOM element
     container.append(renderer.domElement)
 
-    render = ->
-        requestAnimationFrame(render)
-        renderer.render(scene, camera)
-    render()
-
     DIRECTIONS = {}
     DIRECTIONS[KeyCode.Up] = new Vector3(0, 0, -1)
     DIRECTIONS[KeyCode.Down] = new Vector3(0, 0, 1)
     DIRECTIONS[KeyCode.Right] = new Vector3(1, 0, 0)
     DIRECTIONS[KeyCode.Left] = new Vector3(-1, 0, 0)
 
+    cubeRotationDir = undefined
+    cubeRotationAmount = undefined
+    cubeRotationAxis = undefined
+    cubeTranslatedMatrix = undefined
+
+    render = ->
+        if cubeRotationDir
+            cubeRotationAmount += 0.01
+
+            axis = cubeRotationAxis.clone()
+            axis.multiplyScalar(cubeRotationAmount * Math.PI / 2)
+            cube.rotation = new Euler(axis.x, axis.y, axis.z)
+
+            if cubeRotationAmount > 1
+                inv = new Matrix4().getInverse(cubeTranslatedMatrix)
+                cube.geometry.applyMatrix(inv)
+                cube.geometry.verticesNeedUpdate = true
+
+                cube.position.add(cubeRotationDir)
+                cube.position.add(cubeRotationDir.clone().multiplyScalar(-1/2))
+                cube.rotation = new Euler()
+
+                cubeRotationDir = undefined
+        requestAnimationFrame(render)
+        renderer.render(scene, camera)
+    render()
+
     $(document.body).keydown (e) ->
         dir = DIRECTIONS[e.keyCode]
-        cube.applyMatrix(new Matrix4().makeTranslation(dir.x, dir.y, dir.z)) if dir
+        if dir and !cubeRotationDir
+            cubeRotationDir = dir
+            cubeRotationAmount = 0
+            cubeRotationAxis = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2)
+
+            cubeTranslatedMatrix = new Matrix4().makeTranslation(-dir.x/2, 0, -dir.z/2)
+            cube.position.add(new Vector3(dir.x/2, 0, dir.z/2))
+            cube.geometry.applyMatrix(cubeTranslatedMatrix)
+            cube.geometry.verticesNeedUpdate = true
 
         if dir
             e.preventDefault()
