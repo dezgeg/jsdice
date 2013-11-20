@@ -2,17 +2,11 @@ Vector3 = THREE.Vector3
 Matrix4 = THREE.Matrix4
 Euler = THREE.Euler
 
-KeyCode =
-    Left:   37
-    Up:     38
-    Right:  39
-    Down:   40
-
-DIRECTIONS = {}
-DIRECTIONS[KeyCode.Up] = new Vector3(0, 0, -1)
-DIRECTIONS[KeyCode.Down] = new Vector3(0, 0, 1)
-DIRECTIONS[KeyCode.Right] = new Vector3(1, 0, 0)
-DIRECTIONS[KeyCode.Left] = new Vector3(-1, 0, 0)
+DIRECTIONS =
+    Up:     new Vector3(0, 0, -1)
+    Down:   new Vector3(0, 0, 1)
+    Right:  new Vector3(1, 0, 0)
+    Left:   new Vector3(-1, 0, 0)
 
 $ ->
     # set the scene size
@@ -92,6 +86,7 @@ $ ->
 
     # attach the render-supplied DOM element
     container.append(renderer.domElement)
+    keyboard = window.keyboard = new THREEx.KeyboardState()
 
     cubeRotationDir = undefined
     cubeRotationAmount = undefined
@@ -105,6 +100,19 @@ $ ->
                 return face.materialIndex + 1
 
     render = ->
+        if !cubeRotationDir
+            for key, dir of DIRECTIONS
+                continue if not keyboard.pressed(key.toLowerCase())
+                cubeRotationDir = dir
+                cubeRotationAmount = 0
+                cubeRotationAxis = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2)
+
+                cubeTranslatedMatrix = new Matrix4().makeTranslation(-dir.x/2, DICE/2, -dir.z/2)
+                cube.position.add(new Vector3(dir.x/2, -DICE/2, dir.z/2))
+                cube.geometry.applyMatrix(cubeTranslatedMatrix)
+                cube.geometry.verticesNeedUpdate = true
+                break
+
         if cubeRotationDir
             cubeRotationAmount += 0.05
 
@@ -133,20 +141,3 @@ $ ->
         renderer.render(scene, camera)
         rendererStats.update(renderer)
     render()
-
-    $(document.body).keydown (e) ->
-        dir = DIRECTIONS[e.keyCode]
-        if dir and !cubeRotationDir
-            cubeRotationDir = dir
-            cubeRotationAmount = 0
-            cubeRotationAxis = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2)
-
-            cubeTranslatedMatrix = new Matrix4().makeTranslation(-dir.x/2, DICE/2, -dir.z/2)
-            cube.position.add(new Vector3(dir.x/2, -DICE/2, dir.z/2))
-            cube.geometry.applyMatrix(cubeTranslatedMatrix)
-            cube.geometry.verticesNeedUpdate = true
-
-        if dir
-            e.preventDefault()
-            return false
-        return true
