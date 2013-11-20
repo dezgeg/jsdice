@@ -68,14 +68,12 @@ $ ->
     diceGroup.translateZ(-BOARD/2 + DICE/2)
     scene.add(diceGroup)
 
-    cubeMaterial = new THREE.MeshFaceMaterial([
-        new THREE.MeshBasicMaterial({ color: 0xFF0000 }),
-        new THREE.MeshBasicMaterial({ color: 0x00FF00 }),
-        new THREE.MeshBasicMaterial({ color: 0x0000FF }),
-        new THREE.MeshBasicMaterial({ color: 0x00FFFF }),
-        new THREE.MeshBasicMaterial({ color: 0xFF00FF }),
-        new THREE.MeshBasicMaterial({ color: 0xFFFF00 }),
-    ])
+    cubeFaces = []
+    for i in [1..6]
+        tex = new THREE.ImageUtils.loadTexture("images/dice-c#{i}.png")
+        cubeFaces.push(new THREE.MeshBasicMaterial({ map: tex }))
+
+    cubeMaterial = new THREE.MeshFaceMaterial(cubeFaces)
     cubeGeom = new THREE.CubeGeometry(DICE, DICE, DICE)
 
     cube = window.cube = new THREE.Mesh(cubeGeom, cubeMaterial)
@@ -97,7 +95,7 @@ $ ->
         for face in dice.geometry.faces
             dp = face.normal.dot(new Vector3(0, 1, 0))
             if dp > 0.2
-                console.log(face.normal, dice.material.materials[face.materialIndex].color)
+                return face.materialIndex + 1
 
     render = ->
         if cubeRotationDir
