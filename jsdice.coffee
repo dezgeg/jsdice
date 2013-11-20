@@ -1,5 +1,12 @@
 Vector3 = THREE.Vector3
 Matrix4 = THREE.Matrix4
+
+KeyCode =
+    Left:   37
+    Up:     38
+    Right:  39
+    Down:   40
+
 $ ->
     # set the scene size
     WIDTH = 400
@@ -65,5 +72,22 @@ $ ->
     # attach the render-supplied DOM element
     container.append(renderer.domElement)
 
-    # draw!
-    renderer.render(scene, camera)
+    render = ->
+        requestAnimationFrame(render)
+        renderer.render(scene, camera)
+    render()
+
+    DIRECTIONS = {}
+    DIRECTIONS[KeyCode.Up] = new Vector3(0, 0, -1)
+    DIRECTIONS[KeyCode.Down] = new Vector3(0, 0, 1)
+    DIRECTIONS[KeyCode.Right] = new Vector3(1, 0, 0)
+    DIRECTIONS[KeyCode.Left] = new Vector3(-1, 0, 0)
+
+    $(document.body).keydown (e) ->
+        dir = DIRECTIONS[e.keyCode]
+        cube.applyMatrix(new Matrix4().makeTranslation(dir.x, dir.y, dir.z)) if dir
+
+        if dir
+            e.preventDefault()
+            return false
+        return true
