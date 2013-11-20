@@ -8,6 +8,12 @@ KeyCode =
     Right:  39
     Down:   40
 
+DIRECTIONS = {}
+DIRECTIONS[KeyCode.Up] = new Vector3(0, 0, -1)
+DIRECTIONS[KeyCode.Down] = new Vector3(0, 0, 1)
+DIRECTIONS[KeyCode.Right] = new Vector3(1, 0, 0)
+DIRECTIONS[KeyCode.Left] = new Vector3(-1, 0, 0)
+
 $ ->
     # set the scene size
     WIDTH = 400
@@ -31,21 +37,16 @@ $ ->
     scene = new THREE.Scene()
 
     camera = new THREE.PerspectiveCamera(VIEW_ANGLE, WIDTH / HEIGHT, NEAR, FAR)
-
-    # the camera starts at 0,0,0 so pull it back
-    camera.position.x = 6
-    camera.position.y = 8
-    camera.position.z = 6
+    camera.position.set(6, 8, 6)
     camera.lookAt(new Vector3(0, 0, 0))
     camera.updateProjectionMatrix()
     scene.add(camera)
 
     # create a point light
     pointLight = new THREE.PointLight(0xFFFFFF)
-    pointLight.position.x = 0
-    pointLight.position.y = 10
-    pointLight.position.z = 0
+    pointLight.position.set(0, 10, 0)
     scene.add(pointLight)
+
     ambientLight = new THREE.AmbientLight(0x222222)
     scene.add(ambientLight)
 
@@ -53,15 +54,10 @@ $ ->
     planeTexture = new THREE.ImageUtils.loadTexture('images/grid0.png')
     planeTexture.wrapS = planeTexture.wrapT = THREE.RepeatWrapping
     planeTexture.repeat.set(BOARD, BOARD)
-    planeTopMaterial = new THREE.MeshLambertMaterial({ map: planeTexture })
-    planeMaterial = new THREE.MeshFaceMaterial([
-        new THREE.MeshLambertMaterial({ color: 0xCCCCCC }),
-        new THREE.MeshLambertMaterial({ color: 0xCCCCCC }),
-        planeTopMaterial
-        new THREE.MeshLambertMaterial({ color: 0xCCCCCC }),
-        new THREE.MeshLambertMaterial({ color: 0xCCCCCC }),
-        new THREE.MeshLambertMaterial({ color: 0xCCCCCC }),
-    ])
+
+    side = new THREE.MeshLambertMaterial({ color: 0xCCCCCC })
+    top = new THREE.MeshLambertMaterial({ map: planeTexture })
+    planeMaterial = new THREE.MeshFaceMaterial([side, side, top, side, side, side])
     plane = new THREE.Mesh(new THREE.CubeGeometry(BOARD, DICE, BOARD), planeMaterial)
     scene.add(plane)
 
@@ -76,8 +72,7 @@ $ ->
     cubeGeom = new THREE.CubeGeometry(DICE, DICE, DICE)
     cubeGeom.applyMatrix(new Matrix4().makeTranslation(0, DICE/2, 0))
 
-    cube = new THREE.Mesh(cubeGeom, cubeMaterial)
-    window.cube = cube
+    cube = window.cube = new THREE.Mesh(cubeGeom, cubeMaterial)
     diceGroup.add(cube)
 
     # start the renderer
@@ -86,12 +81,6 @@ $ ->
     # attach the render-supplied DOM element
     container.append(renderer.domElement)
 
-    DIRECTIONS = {}
-    DIRECTIONS[KeyCode.Up] = new Vector3(0, 0, -1)
-    DIRECTIONS[KeyCode.Down] = new Vector3(0, 0, 1)
-    DIRECTIONS[KeyCode.Right] = new Vector3(1, 0, 0)
-    DIRECTIONS[KeyCode.Left] = new Vector3(-1, 0, 0)
-
     cubeRotationDir = undefined
     cubeRotationAmount = undefined
     cubeRotationAxis = undefined
@@ -99,7 +88,7 @@ $ ->
 
     render = ->
         if cubeRotationDir
-            cubeRotationAmount += 0.01
+            cubeRotationAmount += 0.05
 
             axis = cubeRotationAxis.clone()
             axis.multiplyScalar(cubeRotationAmount * Math.PI / 2)
