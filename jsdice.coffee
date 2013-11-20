@@ -36,6 +36,12 @@ $ ->
     renderer = new THREE.WebGLRenderer({ antialias: true })
     scene = new THREE.Scene()
 
+    rendererStats = new THREEx.RendererStats()
+    rendererStats.domElement.style.position = 'absolute'
+    rendererStats.domElement.style.left = '0px'
+    rendererStats.domElement.style.bottom   = '0px'
+    document.body.appendChild(rendererStats.domElement)
+
     camera = new THREE.PerspectiveCamera(VIEW_ANGLE, WIDTH / HEIGHT, NEAR, FAR)
     camera.position.set(6, 8, 6)
     camera.lookAt(new Vector3(0, 0, 0))
@@ -125,6 +131,7 @@ $ ->
 
         requestAnimationFrame(render)
         renderer.render(scene, camera)
+        rendererStats.update(renderer)
     render()
 
     $(document.body).keydown (e) ->

@@ -4,8 +4,9 @@
     "main": "jsdice.coffee",
 
     "dependencies": {
-        "jquery": "2.0.3",
-        "threejs": "http://threejs.org/build/three.min.js",
-        "threex.windowresize": "master"
+        "jquery":               "2.0.3",
+        "threejs":              "http://threejs.org/build/three.min.js",
+        "threex.windowresize":  "master",
+        "threex.rendererstat":  "https://github.com/jeromeetienne/threex.rendererstats/archive/master.zip"
     }
 }
