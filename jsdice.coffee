@@ -16,8 +16,8 @@ DIRECTIONS[KeyCode.Left] = new Vector3(-1, 0, 0)
 
 $ ->
     # set the scene size
-    WIDTH = 400
-    HEIGHT = 300
+    WIDTH = window.innerWidth
+    HEIGHT = window.innerHeight
 
     BOARD = 7
     DICE = 1
@@ -33,7 +33,7 @@ $ ->
 
     # create a WebGL renderer, camera
     # and a scene
-    renderer = new THREE.WebGLRenderer()
+    renderer = new THREE.WebGLRenderer({ antialias: true })
     scene = new THREE.Scene()
 
     camera = new THREE.PerspectiveCamera(VIEW_ANGLE, WIDTH / HEIGHT, NEAR, FAR)
@@ -41,6 +41,7 @@ $ ->
     camera.lookAt(new Vector3(0, 0, 0))
     camera.updateProjectionMatrix()
     scene.add(camera)
+    new THREEx.WindowResize(renderer, camera)
 
     # create a point light
     pointLight = new THREE.PointLight(0xFFFFFF)

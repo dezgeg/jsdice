@@ -1,0 +1,11 @@
+{
+    "name": "JSDice",
+    "version": "0.0.1",
+    "main": "jsdice.coffee",
+
+    "dependencies": {
+        "jquery": "2.0.3",
+        "threejs": "http://threejs.org/build/three.min.js",
+        "threex.windowresize": "master"
+    }
+}
