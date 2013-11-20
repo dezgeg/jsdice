@@ -1,7 +1,12 @@
+Vector3 = THREE.Vector3
+Matrix4 = THREE.Matrix4
 $ ->
     # set the scene size
     WIDTH = 400
     HEIGHT = 300
+
+    BOARD = 7
+    DICE = 1
 
     # set some camera attributes
     VIEW_ANGLE = 45
@@ -15,41 +20,50 @@ $ ->
     # create a WebGL renderer, camera
     # and a scene
     renderer = new THREE.WebGLRenderer()
-    camera = new THREE.PerspectiveCamera(VIEW_ANGLE, WIDTH / HEIGHT, NEAR, FAR)
     scene = new THREE.Scene()
 
+    camera = new THREE.PerspectiveCamera(VIEW_ANGLE, WIDTH / HEIGHT, NEAR, FAR)
+
     # the camera starts at 0,0,0 so pull it back
-    camera.position.z = 300
+    camera.position.x = 6
+    camera.position.y = 8
+    camera.position.z = 6
+    camera.lookAt(new Vector3(0, 0, 0))
+    camera.updateProjectionMatrix()
+    scene.add(camera)
+
+    # create a point light
+    pointLight = new THREE.PointLight(0xFFFFFF)
+    pointLight.position.x = 0
+    pointLight.position.y = 10
+    pointLight.position.z = 0
+    scene.add(pointLight)
+    ambientLight = new THREE.AmbientLight(0x222222)
+    scene.add(ambientLight)
+
+    # plane
+    planeMaterial = new THREE.MeshLambertMaterial({ color: 0xCCCCCC })
+    plane = new THREE.Mesh(new THREE.CubeGeometry(BOARD, DICE, BOARD), planeMaterial)
+    scene.add(plane)
+
+    # container for die
+    diceGroup = new THREE.Object3D()
+    diceGroup.translateX(-BOARD/2 + DICE/2)
+    diceGroup.translateZ(-BOARD/2 + DICE/2)
+    scene.add(diceGroup)
+
+    cubeMaterial = new THREE.MeshLambertMaterial({ color: 0xCC0000 })
+    cubeGeom = new THREE.CubeGeometry(DICE, DICE, DICE)
+    cubeGeom.applyMatrix(new Matrix4().makeTranslation(0, DICE, 0))
+
+    cube = new THREE.Mesh(cubeGeom, cubeMaterial)
+    diceGroup.add(cube)
 
     # start the renderer
     renderer.setSize(WIDTH, HEIGHT)
 
     # attach the render-supplied DOM element
     container.append(renderer.domElement)
-
-    # create the sphere's material
-    sphereMaterial = new THREE.MeshLambertMaterial({ color: 0xCC0000 })
-
-    # create a new mesh with sphere geometry -
-    # we will cover the sphereMaterial next!
-    sphere = new THREE.Mesh(new THREE.SphereGeometry(50, 16, 16), sphereMaterial)
-
-    # add the sphere to the scene
-    scene.add(sphere)
-
-    # and the camera
-    scene.add(camera)
-
-    # create a point light
-    pointLight = new THREE.PointLight(0xFFFFFF)
-
-    # set its position
-    pointLight.position.x = 10
-    pointLight.position.y = 50
-    pointLight.position.z = 130
-
-    # add to the scene
-    scene.add(pointLight)
 
     # draw!
     renderer.render(scene, camera)
