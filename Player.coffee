@@ -3,14 +3,22 @@ Matrix4 = THREE.Matrix4
 Euler = THREE.Euler
 
 class Player
-    constructor: (@cube) ->
+    constructor: (@cube, @playerMesh) ->
         @cubeRotationDir = undefined
         @cubeRotationAmount = undefined
         @cubeRotationAxis = undefined
         @cubeTranslatedMatrix = undefined
 
-    beginRotate: (dir) ->
+    move: (dir) ->
         return false if @cubeRotationDir
+
+        ox = Math.round(@playerMesh.position.x)
+        oz = Math.round(@playerMesh.position.z)
+        @playerMesh.position.add(dir.clone().multiplyScalar(0.05))
+        nx = Math.round(@playerMesh.position.x)
+        nz = Math.round(@playerMesh.position.z)
+        return false if ox == nx && oz == nz
+
         @cubeRotationDir = dir
         @cubeRotationAmount = 0
         @cubeRotationAxis = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2)

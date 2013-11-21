@@ -68,19 +68,26 @@ $ ->
     cube.position.y = DICE/2
     diceGroup.add(cube)
 
+    coneMaterial = new THREE.MeshLambertMaterial({ color: 0xCC0000 })
+    coneGeom = new THREE.CylinderGeometry(DICE/4, 0, DICE)
+    coneGeom.applyMatrix(new Matrix4().makeTranslation(0, DICE/2, 0))
+    cone = new THREE.Mesh(coneGeom, coneMaterial)
+    cone.position.y = 1
+    diceGroup.add(cone)
+
+    player = new Player(cube, cone)
+
     # start the renderer
     renderer.setSize(WIDTH, HEIGHT)
 
     # attach the render-supplied DOM element
     container.append(renderer.domElement)
     keyboard = window.keyboard = new THREEx.KeyboardState()
-    player = new Player(cube)
 
     render = ->
         for key, dir of DIRECTIONS
             continue if not keyboard.pressed(key.toLowerCase())
-            player.beginRotate(dir)
-            break
+            player.move(dir)
         player.update()
 
         requestAnimationFrame(render)
