@@ -4,13 +4,13 @@
 MAKEFLAGS := -j2
 
 all:
-	coffee -o build -c jsdice.coffee
+	coffee -o build -c *.coffee
 
 serve:
 	python -m SimpleHTTPServer
 
 watch:
-	coffee -w -o build -c jsdice.coffee
+	coffee -w -o build -c *.coffee
 
 dev: watch serve
 

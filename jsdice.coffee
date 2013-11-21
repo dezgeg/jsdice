@@ -1,20 +1,7 @@
-Vector3 = THREE.Vector3
-Matrix4 = THREE.Matrix4
-Euler = THREE.Euler
-
-DIRECTIONS =
-    Up:     new Vector3(0, 0, -1)
-    Down:   new Vector3(0, 0, 1)
-    Right:  new Vector3(1, 0, 0)
-    Left:   new Vector3(-1, 0, 0)
-
 $ ->
     # set the scene size
     WIDTH = window.innerWidth
     HEIGHT = window.innerHeight
-
-    BOARD = 7
-    DICE = 1
 
     # set some camera attributes
     VIEW_ANGLE = 45
@@ -87,55 +74,14 @@ $ ->
     # attach the render-supplied DOM element
     container.append(renderer.domElement)
     keyboard = window.keyboard = new THREEx.KeyboardState()
-
-    cubeRotationDir = undefined
-    cubeRotationAmount = undefined
-    cubeRotationAxis = undefined
-    cubeTranslatedMatrix = undefined
-
-    calculateDiceNumber = (dice) ->
-        for face in dice.geometry.faces
-            dp = face.normal.dot(new Vector3(0, 1, 0))
-            if dp > 0.2
-                return face.materialIndex + 1
+    player = new Player(cube)
 
     render = ->
-        if !cubeRotationDir
-            for key, dir of DIRECTIONS
-                continue if not keyboard.pressed(key.toLowerCase())
-                cubeRotationDir = dir
-                cubeRotationAmount = 0
-                cubeRotationAxis = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2)
-
-                cubeTranslatedMatrix = new Matrix4().makeTranslation(-dir.x/2, DICE/2, -dir.z/2)
-                cube.position.add(new Vector3(dir.x/2, -DICE/2, dir.z/2))
-                cube.geometry.applyMatrix(cubeTranslatedMatrix)
-                cube.geometry.verticesNeedUpdate = true
-                break
-
-        if cubeRotationDir
-            cubeRotationAmount += 0.05
-
-            axis = cubeRotationAxis.clone()
-            axis.multiplyScalar(cubeRotationAmount * Math.PI / 2)
-            cube.rotation = new Euler(axis.x, axis.y, axis.z)
-
-            if cubeRotationAmount > 1
-                inv = new Matrix4().getInverse(cubeTranslatedMatrix)
-                cube.geometry.applyMatrix(inv)
-                cube.geometry.applyMatrix(new Matrix4().makeRotationFromEuler(cube.rotation))
-                cube.geometry.verticesNeedUpdate = true
-                cube.geometry.elementsNeedUpdate = true
-                cube.geometry.normalsNeedUpdate = true
-                cube.geometry.computeFaceNormals()
-
-                cube.position.add(cubeRotationDir)
-                cube.position.add(cubeRotationDir.clone().multiplyScalar(-1/2))
-                cube.position.y = DICE/2
-
-                cube.rotation.set(0, 0, 0)
-                cubeRotationDir = undefined
-                calculateDiceNumber(cube)
+        for key, dir of DIRECTIONS
+            continue if not keyboard.pressed(key.toLowerCase())
+            player.beginRotate(dir)
+            break
+        player.update()
 
         requestAnimationFrame(render)
         renderer.render(scene, camera)
