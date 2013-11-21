@@ -49,9 +49,10 @@ $ ->
     window.plane = plane
     plane.rotation.x = -Math.PI / 2
     scene.add(plane)
+    lvl = LEVELS[16]
     for i in [0...BOARD]
         for j in [0...BOARD]
-            if i == 1 || j == 5
+            unless lvl.level[i][j]
                 f = 2 * (BOARD * i + j)
                 plane.geometry.faces[f].color.setHex(0)
                 plane.geometry.faces[f+1].color.setHex(0)
@@ -73,6 +74,8 @@ $ ->
     cubeGeom = new THREE.CubeGeometry(DICE, DICE, DICE)
 
     cube = window.cube = new THREE.Mesh(cubeGeom, cubeMaterial)
+    cube.position.x = lvl.px
+    cube.position.z = lvl.py
     cube.position.y = DICE/2
     diceGroup.add(cube)
 
@@ -80,6 +83,8 @@ $ ->
     coneGeom = new THREE.CylinderGeometry(DICE/4, 0, DICE)
     coneGeom.applyMatrix(new Matrix4().makeTranslation(0, DICE/2, 0))
     cone = new THREE.Mesh(coneGeom, coneMaterial)
+    cone.position.x = lvl.px
+    cone.position.z = lvl.py
     cone.position.y = 1
     diceGroup.add(cone)
 
