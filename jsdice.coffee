@@ -43,16 +43,24 @@ $ ->
     planeTexture.wrapS = planeTexture.wrapT = THREE.RepeatWrapping
     planeTexture.repeat.set(BOARD, BOARD)
 
-    side = new THREE.MeshLambertMaterial({ color: 0xCCCCCC })
-    top = new THREE.MeshLambertMaterial({ map: planeTexture })
-    planeMaterial = new THREE.MeshFaceMaterial([side, side, top, side, side, side])
-    plane = new THREE.Mesh(new THREE.CubeGeometry(BOARD, DICE, BOARD), planeMaterial)
+    planeMaterial = new THREE.MeshBasicMaterial({ map: planeTexture, vertexColors: THREE.FaceColors })
+    planeGeom = new THREE.PlaneGeometry(BOARD, BOARD, BOARD, BOARD)
+    plane = new THREE.Mesh(planeGeom, planeMaterial)
+    window.plane = plane
+    plane.rotation.x = -Math.PI / 2
     scene.add(plane)
+    for i in [0...BOARD]
+        for j in [0...BOARD]
+            if i == 1 || j == 5
+                f = 2 * (BOARD * i + j)
+                plane.geometry.faces[f].color.setHex(0)
+                plane.geometry.faces[f+1].color.setHex(0)
+                plane.geometry.colorsNeedUpdate = true
 
     # container for die
     diceGroup = new THREE.Object3D()
     diceGroup.translateX(-BOARD/2 + DICE/2)
-    diceGroup.translateY(DICE/2)
+    diceGroup.translateY(0)
     diceGroup.translateZ(-BOARD/2 + DICE/2)
     scene.add(diceGroup)
 
