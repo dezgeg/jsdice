@@ -20,7 +20,17 @@ class Dice
 window.Dice = Dice
 
 class Player
-    constructor: (@dice, @playerMesh) ->
+    constructor: (diceGroup, @dice, x, z) ->
+        unless Player.coneMaterial
+            Player.coneMaterial = new THREE.MeshLambertMaterial({ color: 0xCC0000 })
+            Player.coneGeom = new THREE.CylinderGeometry(DICE/4, 0, DICE)
+            Player.coneGeom.applyMatrix(new Matrix4().makeTranslation(0, DICE/2, 0))
+        @playerMesh = new THREE.Mesh(Player.coneGeom, Player.coneMaterial)
+        @playerMesh.position.x = x
+        @playerMesh.position.z = z
+        @playerMesh.position.y = 1
+        diceGroup.add(@playerMesh)
+
         @playerOrigPosition = undefined
         @cubeRotationDir = undefined
         @cubeRotationAmount = undefined

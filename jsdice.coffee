@@ -66,17 +66,7 @@ $ ->
     scene.add(diceGroup)
 
     dice = new Dice(diceGroup, lvl.px, lvl.py)
-
-    coneMaterial = new THREE.MeshLambertMaterial({ color: 0xCC0000 })
-    coneGeom = new THREE.CylinderGeometry(DICE/4, 0, DICE)
-    coneGeom.applyMatrix(new Matrix4().makeTranslation(0, DICE/2, 0))
-    cone = new THREE.Mesh(coneGeom, coneMaterial)
-    cone.position.x = lvl.px
-    cone.position.z = lvl.py
-    cone.position.y = 1
-    diceGroup.add(cone)
-
-    player = new Player(dice, cone)
+    player = new Player(diceGroup, dice, lvl.px, lvl.py)
 
     # start the renderer
     renderer.setSize(WIDTH, HEIGHT)
