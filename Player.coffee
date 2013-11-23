@@ -1,3 +1,45 @@
+class Board
+    constructor: (scene) ->
+        # plane
+        planeTexture = new THREE.ImageUtils.loadTexture('images/grid0.png')
+        planeTexture.wrapS = planeTexture.wrapT = THREE.RepeatWrapping
+        planeTexture.repeat.set(BOARD, BOARD)
+
+        planeMaterial = new THREE.MeshBasicMaterial({ map: planeTexture, vertexColors: THREE.FaceColors })
+        planeGeom = new THREE.PlaneGeometry(BOARD, BOARD, BOARD, BOARD)
+        @floorPlane = new THREE.Mesh(planeGeom, planeMaterial)
+        @floorPlane.rotation.x = -Math.PI / 2
+        scene.add(@floorPlane)
+
+        # container for die
+        @diceContainer = new THREE.Object3D()
+        @diceContainer.translateX(-BOARD/2 + DICE/2)
+        @diceContainer.translateY(0)
+        @diceContainer.translateZ(-BOARD/2 + DICE/2)
+        scene.add(@diceContainer)
+
+    loadLevel: (lvl, @player) ->
+        @levelData = lvl
+        @dices = []
+        @player.dice = null
+        for i in [0...BOARD]
+            @dices[i] = []
+            for j in [0...BOARD]
+                entry = lvl.level[i][j]
+                if entry > 1
+                    type = Math.round(10 * (entry - Math.floor(entry)))
+                    d = new Dice(this, j, i, type, Math.floor(entry))
+                    @dices[i][j] = d
+                    if j == lvl.px && i == lvl.py
+                        @player.playerMesh.position.set(j, 1, i)
+                        @player.dice = d
+                else if entry == 0
+                    f = 2 * (BOARD * i + j)
+                    @floorPlane.geometry.faces[f].color.setHex(0)
+                    @floorPlane.geometry.faces[f+1].color.setHex(0)
+        @floorPlane.geometry.colorsNeedUpdate = true
+window.Board = Board
+
 class Dice
     DICE_TYPES:
         5: 'normal'
@@ -8,7 +50,7 @@ class Dice
 
     materials: {}
 
-    constructor: (diceGroup, x, z, type, rot) ->
+    constructor: (board, x, z, type, rot) ->
         type ||= 'normal'
         if typeof type != 'string'
             type = Dice::DICE_TYPES[type]
@@ -40,7 +82,7 @@ class Dice
         if typeof rot != 'undefined'
             @mesh.geometry.applyMatrix(new Matrix4().makeRotationFromEuler(rot))
 
-        diceGroup.add(@mesh)
+        board.diceContainer.add(@mesh)
 
     calculateDiceNumber: (dir) ->
         for face in @mesh.geometry.faces
@@ -51,16 +93,13 @@ class Dice
 window.Dice = Dice
 
 class Player
-    constructor: (diceGroup, @dice, x, z) ->
+    constructor: (board) ->
         unless Player.coneMaterial
             Player.coneMaterial = new THREE.MeshLambertMaterial({ color: 0xCC0000 })
             Player.coneGeom = new THREE.CylinderGeometry(DICE/4, 0, DICE)
             Player.coneGeom.applyMatrix(new Matrix4().makeTranslation(0, DICE/2, 0))
         @playerMesh = new THREE.Mesh(Player.coneGeom, Player.coneMaterial)
-        @playerMesh.position.x = x
-        @playerMesh.position.z = z
-        @playerMesh.position.y = 1
-        diceGroup.add(@playerMesh)
+        board.diceContainer.add(@playerMesh)
 
         @playerOrigPosition = undefined
         @cubeRotationDir = undefined
