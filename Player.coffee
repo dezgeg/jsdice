@@ -1,14 +1,27 @@
 class Dice
-    constructor: (diceGroup, x, z, rot) ->
-        unless Dice.cubeMaterial
+    DICE_TYPES:
+        5: 'normal'
+        6: 'wood'
+        7: 'ice'
+        8: 'stone'
+        9: 'iron'
+
+    materials: {}
+
+    constructor: (diceGroup, x, z, type, rot) ->
+        type ||= 'normal'
+        if typeof type != 'string'
+            type = Dice::DICE_TYPES[type]
+
+        unless Dice::materials[type]
             sides = [null]
             for i in [1..6]
-                tex = new THREE.ImageUtils.loadTexture("images/dice-c#{i}.png")
+                tex = new THREE.ImageUtils.loadTexture("images/dice/#{type}/#{i}.png")
                 material = new THREE.MeshBasicMaterial({ map: tex })
                 material.jsDiceSideValue = i
                 sides.push(material)
             # Order is +X, -X, +Y, -Y, +Z, -Z
-            Dice.cubeMaterial = new THREE.MeshFaceMaterial([
+            Dice::materials[type] = new THREE.MeshFaceMaterial([
                 sides[1],
                 sides[6],
                 sides[2],
@@ -17,7 +30,7 @@ class Dice
                 sides[4],
             ])
 
-        @mesh = new THREE.Mesh(new THREE.CubeGeometry(DICE, DICE, DICE), Dice.cubeMaterial)
+        @mesh = new THREE.Mesh(new THREE.CubeGeometry(DICE, DICE, DICE), Dice::materials[type])
         @mesh.position.x = x
         @mesh.position.z = z
         @mesh.position.y = DICE/2

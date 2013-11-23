@@ -64,7 +64,8 @@ $ ->
         for j in [0...BOARD]
             entry = lvl.level[i][j]
             if entry > 1
-                d = new Dice(diceGroup, j, i, Math.floor(entry))
+                type = Math.round(10 * (entry - Math.floor(entry)))
+                d = new Dice(diceGroup, j, i, type, Math.floor(entry))
                 playerDice = d if j == lvl.px && i == lvl.py
             else if entry == 0
                 f = 2 * (BOARD * i + j)
@@ -79,7 +80,7 @@ $ ->
             for j in [0...4]
                 for k in [0...4]
                         dir = new Euler(i * Math.PI/2, k * Math.PI/2, j * Math.PI/2)
-                        dice = new Dice(diceGroup, 2*i, 2*j, dir)
+                        dice = new Dice(diceGroup, 2*i, 2*j, 'normal', dir)
                         topNum = dice.calculateDiceNumber()
                         frontNum = dice.calculateDiceNumber(DIRECTIONS.Down)
                         sideNum = dice.calculateDiceNumber(DIRECTIONS.Right)
