@@ -73,9 +73,7 @@ class Dice
             ])
 
         @mesh = new THREE.Mesh(new THREE.CubeGeometry(DICE, DICE, DICE), Dice::materials[type])
-        @mesh.position.x = x
-        @mesh.position.z = z
-        @mesh.position.y = DICE/2
+        @mesh.position.set(x, 1/2, z)
 
         if typeof rot == 'number'
             rot = ROTATIONS[rot]
@@ -93,15 +91,16 @@ class Dice
 window.Dice = Dice
 
 class Player
-    constructor: (board) ->
+    constructor: (@board) ->
         unless Player.coneMaterial
             Player.coneMaterial = new THREE.MeshLambertMaterial({ color: 0xCC0000 })
             Player.coneGeom = new THREE.CylinderGeometry(DICE/4, 0, DICE)
             Player.coneGeom.applyMatrix(new Matrix4().makeTranslation(0, DICE/2, 0))
         @playerMesh = new THREE.Mesh(Player.coneGeom, Player.coneMaterial)
-        board.diceContainer.add(@playerMesh)
+        @board.diceContainer.add(@playerMesh)
 
         @playerOrigPosition = undefined
+        @cubeOrigPosition = undefined
         @cubeRotationDir = undefined
         @cubeRotationAmount = undefined
         @cubeRotationAxis = undefined
@@ -112,12 +111,31 @@ class Player
 
         ox = Math.round(@playerMesh.position.x)
         oz = Math.round(@playerMesh.position.z)
-        @playerMesh.position.add(dir.clone().multiplyScalar(0.05))
-        nx = Math.round(@playerMesh.position.x)
-        nz = Math.round(@playerMesh.position.z)
-        return false if ox == nx && oz == nz
+        newPos = @playerMesh.position.clone().add(dir.clone().multiplyScalar(0.05))
+        nx = Math.round(newPos.x)
+        nz = Math.round(newPos.z)
+        if ox == nx && oz == nz
+            # Player didn't cross dice boundary.
+            @playerMesh.position = newPos
+            return false
 
+        if nx < 0 or nz < 0 or nx >= BOARD or nz >= BOARD
+            return false
+
+        unless @board.levelData.level[nz][nx]
+            # No floor
+            return false
+
+        newDice = @board.dices[nz][nx]
+        if newDice
+            # Just step onto the next dice
+            @playerMesh.position = newPos
+            @dice = newDice
+            return false
+
+        # Otherwise, we do the roll animation
         @playerOrigPosition = @playerMesh.position.clone()
+        @cubeOrigPosition = @dice.mesh.position.clone()
         @cubeRotationDir = dir
         @cubeRotationAmount = 0
         @cubeRotationAxis = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2)
@@ -140,6 +158,7 @@ class Player
             @cubeRotationDir.clone().multiplyScalar(0.5 * @cubeRotationAmount))
         @playerMesh.position.y += Math.sqrt(2) * @cubeRotationAmount * (1 - @cubeRotationAmount)
 
+        # Rotation finished?
         return true if @cubeRotationAmount < 1
 
         inv = new Matrix4().getInverse(@cubeTranslatedMatrix)
@@ -150,11 +169,13 @@ class Player
         @dice.mesh.geometry.normalsNeedUpdate = true
         @dice.mesh.geometry.computeFaceNormals()
 
-        @dice.mesh.position.add(@cubeRotationDir)
-        @dice.mesh.position.add(@cubeRotationDir.clone().multiplyScalar(-1/2))
+        @dice.mesh.position.add(@cubeRotationDir.clone().multiplyScalar(1/2))
         @dice.mesh.position.y = DICE/2
-
         @dice.mesh.rotation.set(0, 0, 0)
+
+        @board.dices[@cubeOrigPosition.z][@cubeOrigPosition.x] = null
+        @board.dices[@dice.mesh.position.z][@dice.mesh.position.x] = @dice
+
         @cubeRotationDir = undefined
 
         return true
