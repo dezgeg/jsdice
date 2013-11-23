@@ -65,19 +65,7 @@ $ ->
     diceGroup.translateZ(-BOARD/2 + DICE/2)
     scene.add(diceGroup)
 
-    cubeFaces = []
-    for i in [1..6]
-        tex = new THREE.ImageUtils.loadTexture("images/dice-c#{i}.png")
-        cubeFaces.push(new THREE.MeshBasicMaterial({ map: tex }))
-
-    cubeMaterial = new THREE.MeshFaceMaterial(cubeFaces)
-    cubeGeom = new THREE.CubeGeometry(DICE, DICE, DICE)
-
-    cube = window.cube = new THREE.Mesh(cubeGeom, cubeMaterial)
-    cube.position.x = lvl.px
-    cube.position.z = lvl.py
-    cube.position.y = DICE/2
-    diceGroup.add(cube)
+    dice = new Dice(diceGroup, lvl.px, lvl.py)
 
     coneMaterial = new THREE.MeshLambertMaterial({ color: 0xCC0000 })
     coneGeom = new THREE.CylinderGeometry(DICE/4, 0, DICE)
@@ -88,7 +76,7 @@ $ ->
     cone.position.y = 1
     diceGroup.add(cone)
 
-    player = new Player(cube, cone)
+    player = new Player(dice, cone)
 
     # start the renderer
     renderer.setSize(WIDTH, HEIGHT)
