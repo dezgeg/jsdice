@@ -142,9 +142,20 @@ class Player
 
         newDice = @board.dices[nz][nx]
         if newDice
+            if not @dice
+                return false
             # Just step onto the next dice
             @playerMesh.position = newPos
             @dice = newDice
+            return false
+
+        # On the floor?
+        if not @dice
+            @playerMesh.position = newPos
+            return false
+
+        # Can't move a vanishing dice.
+        if @dice.state != "IDLE"
             return false
 
         # Otherwise, we do the roll animation
