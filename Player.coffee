@@ -82,7 +82,7 @@ class Dice
 
         board.diceContainer.add(@mesh)
 
-    calculateDiceNumber: (dir) ->
+    getValue: (dir) ->
         for face in @mesh.geometry.faces
             dp = face.normal.dot(dir || new Vector3(0, 1, 0))
             if dp > 0.2
@@ -176,7 +176,27 @@ class Player
         @board.dices[@cubeOrigPosition.z][@cubeOrigPosition.x] = null
         @board.dices[@dice.mesh.position.z][@dice.mesh.position.x] = @dice
 
-        @cubeRotationDir = undefined
+        console.log(@checkForNewVanishingDice())
 
+        @cubeRotationDir = undefined
         return true
+
+    checkForNewVanishingDice: () ->
+        goodDices = {}
+        wantedValue = @dice.getValue()
+        return false if wantedValue == 1
+
+        recurse = (x, z) =>
+            return if goodDices[x + ',' + z] or x < 0 or z < 0 or x >= BOARD or z >= BOARD
+            dice = @board.dices[z][x]
+            return if not dice
+
+            if dice.getValue() == wantedValue
+                goodDices[x + ',' + z] = dice
+                for i, dir of DIRECTIONS
+                    recurse(x + dir.x, z + dir.z)
+            return
+        recurse(@dice.mesh.position.x, @dice.mesh.position.z)
+        return _.size(goodDices) >= wantedValue
+
 window.Player = Player
