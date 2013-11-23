@@ -50,7 +50,7 @@ class Dice
 
     materials: {}
 
-    constructor: (board, x, z, type, rot) ->
+    constructor: (@board, x, z, type, rot) ->
         type ||= 'normal'
         if typeof type != 'string'
             type = Dice::DICE_TYPES[type]
@@ -72,6 +72,7 @@ class Dice
                     sides[1], sides[6], sides[2], sides[5], sides[3], sides[4],
                 ])
 
+        @state = "IDLE"
         @mesh = new THREE.Mesh(new THREE.CubeGeometry(1, 1, 1), Dice::materials[type].normal)
         @mesh.position.set(x, 1/2, z)
 
@@ -80,7 +81,20 @@ class Dice
         if typeof rot != 'undefined'
             @mesh.geometry.applyMatrix(new Matrix4().makeRotationFromEuler(rot))
 
-        board.diceContainer.add(@mesh)
+        @board.diceContainer.add(@mesh)
+
+    update: () ->
+        if @state == "VANISHING"
+            @vanishAmount -= 0.005
+            @mesh.position.y = -1/2 + @vanishAmount
+            if @vanishAmount < 0
+                if @board.player.dice == this
+                    @board.player.dice = null
+                @board.dices[@mesh.position.z][@mesh.position.x] = null
+                @board.diceContainer.remove(@mesh)
+                @state = "GONE"
+        else if @state == "GONE"
+            throw new Error("Dice should be gone")
 
     getValue: (dir) ->
         for face in @mesh.geometry.faces
@@ -201,6 +215,8 @@ class Player
         if _.size(goodDices) >= wantedValue
             for key, dice of goodDices
                 dice.mesh.material = Dice::materials[dice.type].vanishing
+                dice.state = 'VANISHING'
+                dice.vanishAmount = 1.0
             return true
         return false
 

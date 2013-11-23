@@ -50,12 +50,17 @@ $ ->
     keyboard = window.keyboard = new THREEx.KeyboardState()
 
     render = ->
+        requestAnimationFrame(render)
+
         for key, dir of DIRECTIONS
             continue if not keyboard.pressed(key.toLowerCase())
             player.move(dir)
         player.update()
 
-        requestAnimationFrame(render)
+        for i in [0...BOARD]
+            for j in [0...BOARD]
+                board.dices[i][j].update() if board.dices[i][j]
+
         renderer.render(scene, camera)
         rendererStats.update(renderer)
     render()
