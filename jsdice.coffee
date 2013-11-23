@@ -31,16 +31,16 @@ $ ->
     new THREEx.WindowResize(renderer, camera)
 
     # create a point light
-    pointLight = new THREE.PointLight(0xFFFFFF)
+    pointLight = new THREE.PointLight(0x88888888)
     pointLight.position.set(0, 10, 0)
     scene.add(pointLight)
 
-    ambientLight = new THREE.AmbientLight(0x222222)
+    ambientLight = new THREE.AmbientLight(0x666666)
     scene.add(ambientLight)
 
     board = new Board(scene)
     player = new Player(board)
-    board.loadLevel(LEVELS[24], player)
+    board.loadLevel(LEVELS[7], player)
 
     # start the renderer
     renderer.setSize(WIDTH, HEIGHT)

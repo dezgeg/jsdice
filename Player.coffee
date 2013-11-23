@@ -55,24 +55,24 @@ class Dice
         if typeof type != 'string'
             type = Dice::DICE_TYPES[type]
 
+        @type = type
         unless Dice::materials[type]
-            sides = [null]
-            for i in [1..6]
-                tex = new THREE.ImageUtils.loadTexture("images/dice/#{type}/#{i}.png")
-                material = new THREE.MeshBasicMaterial({ map: tex })
-                material.jsDiceSideValue = i
-                sides.push(material)
-            # Order is +X, -X, +Y, -Y, +Z, -Z
-            Dice::materials[type] = new THREE.MeshFaceMaterial([
-                sides[1],
-                sides[6],
-                sides[2],
-                sides[5],
-                sides[3],
-                sides[4],
-            ])
+            Dice::materials[type] = []
+            for mode in ['normal', 'vanishing']
+                sides = [null]
+                for i in [1..6]
+                    tex = new THREE.ImageUtils.loadTexture("images/dice/#{type}/#{i}.png")
+                    material = new THREE.MeshLambertMaterial({ map: tex })
+                    if mode == 'vanishing'
+                        material.emissive.setHex(0xFF0000)
+                    material.jsDiceSideValue = i
+                    sides.push(material)
+                # Order is +X, -X, +Y, -Y, +Z, -Z
+                Dice::materials[type][mode] = new THREE.MeshFaceMaterial([
+                    sides[1], sides[6], sides[2], sides[5], sides[3], sides[4],
+                ])
 
-        @mesh = new THREE.Mesh(new THREE.CubeGeometry(DICE, DICE, DICE), Dice::materials[type])
+        @mesh = new THREE.Mesh(new THREE.CubeGeometry(1, 1, 1), Dice::materials[type].normal)
         @mesh.position.set(x, 1/2, z)
 
         if typeof rot == 'number'
@@ -93,7 +93,7 @@ window.Dice = Dice
 class Player
     constructor: (@board) ->
         unless Player.coneMaterial
-            Player.coneMaterial = new THREE.MeshLambertMaterial({ color: 0xCC0000 })
+            Player.coneMaterial = new THREE.MeshLambertMaterial({ color: 0xFF0000, ambient: 0xFF0000 })
             Player.coneGeom = new THREE.CylinderGeometry(DICE/4, 0, DICE)
             Player.coneGeom.applyMatrix(new Matrix4().makeTranslation(0, DICE/2, 0))
         @playerMesh = new THREE.Mesh(Player.coneGeom, Player.coneMaterial)
@@ -197,6 +197,11 @@ class Player
                     recurse(x + dir.x, z + dir.z)
             return
         recurse(@dice.mesh.position.x, @dice.mesh.position.z)
-        return _.size(goodDices) >= wantedValue
+
+        if _.size(goodDices) >= wantedValue
+            for key, dice of goodDices
+                dice.mesh.material = Dice::materials[dice.type].vanishing
+            return true
+        return false
 
 window.Player = Player
