@@ -59,18 +59,36 @@ $ ->
 
     # level load
     lvl = LEVELS[1]
-
     playerDice = null
     for i in [0...BOARD]
         for j in [0...BOARD]
-            if lvl.level[i][j] > 1
-                d = new Dice(diceGroup, j, i)
+            entry = lvl.level[i][j]
+            if entry > 1
+                d = new Dice(diceGroup, j, i, Math.floor(entry))
                 playerDice = d if j == lvl.px && i == lvl.py
-            else if lvl.level[i][j] == 0
+            else if entry == 0
                 f = 2 * (BOARD * i + j)
                 plane.geometry.faces[f].color.setHex(0)
                 plane.geometry.faces[f+1].color.setHex(0)
     plane.geometry.colorsNeedUpdate = true
+
+    if false
+        # Generate rotations map
+        result = {}
+        for i in [0...4]
+            for j in [0...4]
+                for k in [0...4]
+                        dir = new Euler(i * Math.PI/2, k * Math.PI/2, j * Math.PI/2)
+                        dice = new Dice(diceGroup, 2*i, 2*j, dir)
+                        topNum = dice.calculateDiceNumber()
+                        frontNum = dice.calculateDiceNumber(DIRECTIONS.Down)
+                        sideNum = dice.calculateDiceNumber(DIRECTIONS.Right)
+                        key = 1000*topNum + 100*frontNum + 10*sideNum
+                        s = "new Euler(#{i} * Math.PI/2, #{k} * Math.PI/2, #{j} * Math.PI/2)"
+                        result[key] = s if result[key] == undefined
+                        console.log(i, j, k, key)
+        console.log(JSON.stringify(result))
+        window.result = result
 
     player = new Player(diceGroup, playerDice, lvl.px, lvl.py)
 

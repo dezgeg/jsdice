@@ -1,14 +1,12 @@
-Vector3 = THREE.Vector3
-Matrix4 = THREE.Matrix4
-Euler = THREE.Euler
-
 class Dice
-    constructor: (diceGroup, x, z) ->
+    constructor: (diceGroup, x, z, rot) ->
         unless Dice.cubeMaterial
             sides = [null]
             for i in [1..6]
                 tex = new THREE.ImageUtils.loadTexture("images/dice-c#{i}.png")
-                sides.push(new THREE.MeshBasicMaterial({ map: tex }))
+                material = new THREE.MeshBasicMaterial({ map: tex })
+                material.jsDiceSideValue = i
+                sides.push(material)
             # Order is +X, -X, +Y, -Y, +Z, -Z
             Dice.cubeMaterial = new THREE.MeshFaceMaterial([
                 sides[1],
@@ -23,7 +21,20 @@ class Dice
         @mesh.position.x = x
         @mesh.position.z = z
         @mesh.position.y = DICE/2
+
+        if typeof rot == 'number'
+            rot = ROTATIONS[rot]
+        if typeof rot != 'undefined'
+            @mesh.geometry.applyMatrix(new Matrix4().makeRotationFromEuler(rot))
+
         diceGroup.add(@mesh)
+
+    calculateDiceNumber: (dir) ->
+        for face in @mesh.geometry.faces
+            dp = face.normal.dot(dir || new Vector3(0, 1, 0))
+            if dp > 0.2
+                return @mesh.material.materials[face.materialIndex].jsDiceSideValue
+        return undefined
 window.Dice = Dice
 
 class Player
@@ -95,11 +106,4 @@ class Player
         @cubeRotationDir = undefined
 
         return true
-
-    calculateDiceNumber: () ->
-        for face in @dice.mesh.geometry.faces
-            dp = face.normal.dot(new Vector3(0, 1, 0))
-            if dp > 0.2
-                return face.materialIndex + 1
-        return undefined
 window.Player = Player
