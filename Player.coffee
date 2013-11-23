@@ -10,9 +10,8 @@ class Dice
                 tex = new THREE.ImageUtils.loadTexture("images/dice-c#{i}.png")
                 cubeFaces.push(new THREE.MeshBasicMaterial({ map: tex }))
             Dice.cubeMaterial = new THREE.MeshFaceMaterial(cubeFaces)
-            Dice.cubeGeom = new THREE.CubeGeometry(DICE, DICE, DICE)
 
-        @mesh = new THREE.Mesh(Dice.cubeGeom, Dice.cubeMaterial)
+        @mesh = new THREE.Mesh(new THREE.CubeGeometry(DICE, DICE, DICE), Dice.cubeMaterial)
         @mesh.position.x = x
         @mesh.position.z = z
         @mesh.position.y = DICE/2
