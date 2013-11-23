@@ -1,13 +1,6 @@
 class Board
     constructor: (scene) ->
-        # plane
-        planeTexture = new THREE.ImageUtils.loadTexture('images/grid0.png')
-        planeTexture.wrapS = planeTexture.wrapT = THREE.RepeatWrapping
-        planeTexture.repeat.set(BOARD, BOARD)
-
-        planeMaterial = new THREE.MeshBasicMaterial({ map: planeTexture, vertexColors: THREE.FaceColors })
-        planeGeom = new THREE.PlaneGeometry(BOARD, BOARD, BOARD, BOARD)
-        @floorPlane = new THREE.Mesh(planeGeom, planeMaterial)
+        @floorPlane = new THREE.Mesh(Resources.floorGeometry.clone(), Resources.floorMaterial)
         @floorPlane.rotation.x = -Math.PI / 2
         scene.add(@floorPlane)
 
@@ -48,33 +41,17 @@ class Dice
         8: 'stone'
         9: 'iron'
 
-    materials: {}
-
     constructor: (@board, x, z, type, rot) ->
         type ||= 'normal'
         if typeof type != 'string'
             type = Dice::DICE_TYPES[type]
 
         @type = type
-        unless Dice::materials[type]
-            Dice::materials[type] = []
-            for mode in ['normal', 'vanishing']
-                sides = [null]
-                for i in [1..6]
-                    tex = new THREE.ImageUtils.loadTexture("images/dice/#{type}/#{i}.png")
-                    material = new THREE.MeshLambertMaterial({ map: tex })
-                    if mode == 'vanishing'
-                        material.emissive.setHex(0xFF0000)
-                    material.jsDiceSideValue = i
-                    sides.push(material)
-                # Order is +X, -X, +Y, -Y, +Z, -Z
-                Dice::materials[type][mode] = new THREE.MeshFaceMaterial([
-                    sides[1], sides[6], sides[2], sides[5], sides[3], sides[4],
-                ])
-
         @state = "IDLE"
-        @mesh = new THREE.Mesh(new THREE.CubeGeometry(1, 1, 1), Dice::materials[type].normal)
+        @mesh = new THREE.Mesh(new THREE.CubeGeometry(1, 1, 1),
+                Resources.diceMaterials[type].normal)
         @mesh.position.set(x, 1/2, z)
+        @vanishMaterial = Resources.diceMaterials[type].vanishing
 
         if typeof rot == 'number'
             rot = ROTATIONS[rot]
@@ -106,11 +83,7 @@ window.Dice = Dice
 
 class Player
     constructor: (@board) ->
-        unless Player.coneMaterial
-            Player.coneMaterial = new THREE.MeshLambertMaterial({ color: 0xFF0000, ambient: 0xFF0000 })
-            Player.coneGeom = new THREE.CylinderGeometry(DICE/4, 0, DICE)
-            Player.coneGeom.applyMatrix(new Matrix4().makeTranslation(0, DICE/2, 0))
-        @playerMesh = new THREE.Mesh(Player.coneGeom, Player.coneMaterial)
+        @playerMesh = new THREE.Mesh(Resources.playerGeometry, Resources.playerMaterial)
         @board.diceContainer.add(@playerMesh)
 
         @playerOrigPosition = undefined
@@ -225,7 +198,7 @@ class Player
 
         if _.size(goodDices) >= wantedValue
             for key, dice of goodDices
-                dice.mesh.material = Dice::materials[dice.type].vanishing
+                dice.mesh.material = dice.vanishMaterial
                 dice.state = 'VANISHING'
                 dice.vanishAmount = 1.0
             return true
