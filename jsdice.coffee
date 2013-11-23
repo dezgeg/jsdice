@@ -49,14 +49,6 @@ $ ->
     window.plane = plane
     plane.rotation.x = -Math.PI / 2
     scene.add(plane)
-    lvl = LEVELS[16]
-    for i in [0...BOARD]
-        for j in [0...BOARD]
-            unless lvl.level[i][j]
-                f = 2 * (BOARD * i + j)
-                plane.geometry.faces[f].color.setHex(0)
-                plane.geometry.faces[f+1].color.setHex(0)
-                plane.geometry.colorsNeedUpdate = true
 
     # container for die
     diceGroup = new THREE.Object3D()
@@ -65,8 +57,22 @@ $ ->
     diceGroup.translateZ(-BOARD/2 + DICE/2)
     scene.add(diceGroup)
 
-    dice = new Dice(diceGroup, lvl.px, lvl.py)
-    player = new Player(diceGroup, dice, lvl.px, lvl.py)
+    # level load
+    lvl = LEVELS[1]
+
+    playerDice = null
+    for i in [0...BOARD]
+        for j in [0...BOARD]
+            if lvl.level[i][j] > 1
+                d = new Dice(diceGroup, j, i)
+                playerDice = d if j == lvl.px && i == lvl.py
+            else if lvl.level[i][j] == 0
+                f = 2 * (BOARD * i + j)
+                plane.geometry.faces[f].color.setHex(0)
+                plane.geometry.faces[f+1].color.setHex(0)
+    plane.geometry.colorsNeedUpdate = true
+
+    player = new Player(diceGroup, playerDice, lvl.px, lvl.py)
 
     # start the renderer
     renderer.setSize(WIDTH, HEIGHT)
