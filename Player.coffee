@@ -5,11 +5,19 @@ Euler = THREE.Euler
 class Dice
     constructor: (diceGroup, x, z) ->
         unless Dice.cubeMaterial
-            cubeFaces = []
+            sides = [null]
             for i in [1..6]
                 tex = new THREE.ImageUtils.loadTexture("images/dice-c#{i}.png")
-                cubeFaces.push(new THREE.MeshBasicMaterial({ map: tex }))
-            Dice.cubeMaterial = new THREE.MeshFaceMaterial(cubeFaces)
+                sides.push(new THREE.MeshBasicMaterial({ map: tex }))
+            # Order is +X, -X, +Y, -Y, +Z, -Z
+            Dice.cubeMaterial = new THREE.MeshFaceMaterial([
+                sides[1],
+                sides[6],
+                sides[2],
+                sides[5],
+                sides[3],
+                sides[4],
+            ])
 
         @mesh = new THREE.Mesh(new THREE.CubeGeometry(DICE, DICE, DICE), Dice.cubeMaterial)
         @mesh.position.x = x
