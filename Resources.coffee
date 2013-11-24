@@ -16,13 +16,19 @@ class Resources
     @diceMaterials = {}
     for code, type of Dice::DICE_TYPES
         @diceMaterials[type] = {}
-        for mode in ['normal', 'vanishing']
+        for mode in ['normal', 'vanishing', 'vanishingTransparent']
             sides = [null]
+
             for i in [1..6]
                 tex = new THREE.ImageUtils.loadTexture("images/dice/#{type}/#{i}.png")
                 material = new THREE.MeshLambertMaterial({ map: tex })
-                if mode == 'vanishing'
+
+                if mode == 'vanishing' || mode == 'vanishingTransparent'
                     material.emissive.setHex(0xFF0000)
+                if mode == 'vanishingTransparent'
+                    material.transparent = true
+                    material.opacity = 0.5
+
                 material.jsDiceSideValue = i
                 sides.push(material)
             # Order is +X, -X, +Y, -Y, +Z, -Z

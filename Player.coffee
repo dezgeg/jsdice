@@ -51,6 +51,7 @@ class Dice
         7: 'ice'
         8: 'stone'
         9: 'iron'
+    VANISH_TRANSPARENT_THRESHOLD: 0.5
 
     constructor: (@board, x, z, type, rot) ->
         type ||= 'normal'
@@ -63,6 +64,7 @@ class Dice
                 Resources.diceMaterials[type].normal)
         @mesh.position.set(x, 1/2, z)
         @vanishMaterial = Resources.diceMaterials[type].vanishing
+        @vanishTransparentMaterial = Resources.diceMaterials[type].vanishingTransparent
 
         if typeof rot == 'number'
             rot = ROTATIONS[rot]
@@ -75,7 +77,11 @@ class Dice
         if @state == "VANISHING"
             @vanishAmount -= 0.005
             @mesh.position.y = -1/2 + @vanishAmount
-            if @vanishAmount < 0
+
+            if @vanishAmount < Dice::VANISH_TRANSPARENT_THRESHOLD and @mesh.material == @vanishMaterial
+                @mesh.material = @vanishTransparentMaterial
+
+            else if @vanishAmount < 0
                 if @board.player.dice == this
                     @board.player.dice = null
                 @board.dices[@mesh.position.z][@mesh.position.x] = null
@@ -237,7 +243,8 @@ class Player
             for key, dice of goodDices
                 dice.mesh.material = dice.vanishMaterial
                 dice.state = 'VANISHING'
-                dice.vanishAmount = 1.0
+                if typeof dice.vanishAmount != 'number'
+                    dice.vanishAmount = 1.0
             return true
         return false
 

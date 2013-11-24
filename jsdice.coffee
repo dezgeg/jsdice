@@ -40,7 +40,7 @@ $ ->
 
     board = new Board(scene)
     window.player = player = new Player(board)
-    board.loadLevel(LEVELS[16], player)
+    board.loadLevel(LEVELS[7], player)
 
     # start the renderer
     renderer.setSize(WIDTH, HEIGHT)
