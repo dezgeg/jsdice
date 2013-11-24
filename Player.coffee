@@ -179,7 +179,9 @@ class Player
         return true
 
     update: () ->
-        return false unless @playerMovementAction
+        if not @playerMovementAction
+            @playerMesh.position.y = 1/2 + @dice.mesh.position.y if @dice
+            return
         @cubeRotationAmount += 0.05
         @cubeRotationAmount = Math.min(@cubeRotationAmount, 1.0)
 
