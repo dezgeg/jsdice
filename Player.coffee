@@ -31,6 +31,17 @@ class Board
                     @floorPlane.geometry.faces[f].color.setHex(0)
                     @floorPlane.geometry.faces[f+1].color.setHex(0)
         @floorPlane.geometry.colorsNeedUpdate = true
+
+    hasFloorAt: (x, z) ->
+        if x < 0 or z < 0 or x >= BOARD or z >= BOARD
+            return false
+        return !!@levelData.level[z][x]
+
+    getDiceAt: (x, z) ->
+        if x < 0 or z < 0 or x >= BOARD or z >= BOARD
+            return null
+        return @dices[z][x]
+
 window.Board = Board
 
 class Dice
@@ -79,6 +90,12 @@ class Dice
             if dp > 0.2
                 return @mesh.material.materials[face.materialIndex].jsDiceSideValue
         return undefined
+
+    canRoll: () ->
+        return @state == "IDLE"
+
+    canSlide: () ->
+        return @state == "IDLE"
 window.Dice = Dice
 
 class Player
@@ -86,102 +103,122 @@ class Player
         @playerMesh = new THREE.Mesh(Resources.playerGeometry, Resources.playerMaterial)
         @board.diceContainer.add(@playerMesh)
 
-        @playerOrigPosition = undefined
-        @cubeOrigPosition = undefined
-        @cubeRotationDir = undefined
-        @cubeRotationAmount = undefined
-        @cubeRotationAxis = undefined
-        @cubeTranslatedMatrix = undefined
+        @playerMovementAction = undefined
+
+    # Get action to do when moving from integral coords (ox, oz) to (nx, nz)
+    # Returns either: falsey, 'move', 'roll', 'slide'
+    getMovementAction: (ox, oz, nx, nz, dir) ->
+        if ox == nx && oz == nz
+            # Player didn't cross dice boundary.
+            return 'move'
+
+        unless @board.hasFloorAt(nx, nz)
+            return false
+
+        newDice = @board.getDiceAt(nx, nz)
+        if @dice
+            # Just step onto the next dice
+            if newDice
+                # Just step onto the next dice
+                return 'move'
+            else
+                return if @dice.canRoll() then 'roll' else false
+        else
+            # On the floor
+            return 'move' if !newDice # Just move to another new empty square
+            if !newDice.canSlide()
+                return false
+            newDiceX = nx + dir.x
+            newDiceZ = nz + dir.z
+            if !@board.hasFloorAt(newDiceX, newDiceZ) or @board.getDiceAt(newDiceX, newDiceZ)
+                return false
+            return 'slide'
 
     move: (dir) ->
-        return false if @cubeRotationDir
+        return false if @playerMovementAction
 
         ox = Math.round(@playerMesh.position.x)
         oz = Math.round(@playerMesh.position.z)
         newPos = @playerMesh.position.clone().add(dir.clone().multiplyScalar(0.05))
         nx = Math.round(newPos.x)
         nz = Math.round(newPos.z)
-        if ox == nx && oz == nz
-            # Player didn't cross dice boundary.
+
+        movement = @getMovementAction(ox, oz, nx, nz, dir)
+        if !movement
+            return
+        else if movement == 'move'
             @playerMesh.position = newPos
-            return false
+            @dice = @board.getDiceAt(nx, nz)
+            return
 
-        if nx < 0 or nz < 0 or nx >= BOARD or nz >= BOARD
-            return false
-
-        unless @board.levelData.level[nz][nx]
-            # No floor
-            return false
-
-        newDice = @board.dices[nz][nx]
-        if newDice
-            if not @dice
-                return false
-            # Just step onto the next dice
-            @playerMesh.position = newPos
-            @dice = newDice
-            return false
-
-        # On the floor?
-        if not @dice
-            @playerMesh.position = newPos
-            return false
-
-        # Can't move a vanishing dice.
-        if @dice.state != "IDLE"
-            return false
-
-        # Otherwise, we do the roll animation
+        @playerMovementAction = movement
         @playerOrigPosition = @playerMesh.position.clone()
-        @cubeOrigPosition = @dice.mesh.position.clone()
         @cubeRotationDir = dir
         @cubeRotationAmount = 0
-        @cubeRotationAxis = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2)
 
-        @cubeTranslatedMatrix = new Matrix4().makeTranslation(-dir.x/2, DICE/2, -dir.z/2)
-        @dice.mesh.position.add(new Vector3(dir.x/2, -DICE/2, dir.z/2))
-        @dice.mesh.geometry.applyMatrix(@cubeTranslatedMatrix)
-        @dice.mesh.geometry.verticesNeedUpdate = true
+        if movement == 'slide'
+            @animatedDice = @board.getDiceAt(nx, nz)
+            @cubeOrigPosition = @animatedDice.mesh.position.clone()
+        else if movement == 'roll'
+            # Otherwise, we do the roll animation
+            @cubeOrigPosition = @dice.mesh.position.clone()
+            @animatedDice = @dice
+            @cubeRotationAxis = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2)
+
+            @cubeTranslatedMatrix = new Matrix4().makeTranslation(-dir.x/2, DICE/2, -dir.z/2)
+            @dice.mesh.position.add(new Vector3(dir.x/2, -DICE/2, dir.z/2))
+            @dice.mesh.geometry.applyMatrix(@cubeTranslatedMatrix)
+            @dice.mesh.geometry.verticesNeedUpdate = true
 
         return true
 
     update: () ->
-        return false unless @cubeRotationDir
+        return false unless @playerMovementAction
         @cubeRotationAmount += 0.05
+        @cubeRotationAmount = Math.min(@cubeRotationAmount, 1.0)
 
-        axis = @cubeRotationAxis.clone()
-        axis.multiplyScalar(@cubeRotationAmount * Math.PI / 2)
-        @dice.mesh.rotation = new Euler(axis.x, axis.y, axis.z)
-        @playerMesh.position = @playerOrigPosition.clone().add(
-            @cubeRotationDir.clone().multiplyScalar(0.5 * @cubeRotationAmount))
-        @playerMesh.position.y += Math.sqrt(2) * @cubeRotationAmount * (1 - @cubeRotationAmount)
+        if @playerMovementAction == 'slide'
+            # Constant of .99 to avoid float inaccuracies... :(
+            @playerMesh.position = @playerOrigPosition.clone().add(
+                @cubeRotationDir.clone().multiplyScalar(0.99 * @cubeRotationAmount))
+            @animatedDice.mesh.position = @cubeOrigPosition.clone().add(
+                @cubeRotationDir.clone().multiplyScalar(@cubeRotationAmount))
+        else
+            axis = @cubeRotationAxis.clone()
+            axis.multiplyScalar(@cubeRotationAmount * Math.PI / 2)
+            @animatedDice.mesh.rotation = new Euler(axis.x, axis.y, axis.z)
+            @playerMesh.position = @playerOrigPosition.clone().add(
+                @cubeRotationDir.clone().multiplyScalar(0.5 * @cubeRotationAmount))
+            @playerMesh.position.y += Math.sqrt(2) * @cubeRotationAmount * (1 - @cubeRotationAmount)
 
         # Rotation finished?
         return true if @cubeRotationAmount < 1
 
-        inv = new Matrix4().getInverse(@cubeTranslatedMatrix)
-        @dice.mesh.geometry.applyMatrix(inv)
-        @dice.mesh.geometry.applyMatrix(new Matrix4().makeRotationFromEuler(@dice.mesh.rotation))
-        @dice.mesh.geometry.verticesNeedUpdate = true
-        @dice.mesh.geometry.elementsNeedUpdate = true
-        @dice.mesh.geometry.normalsNeedUpdate = true
-        @dice.mesh.geometry.computeFaceNormals()
+        if @playerMovementAction == 'roll'
+            inv = new Matrix4().getInverse(@cubeTranslatedMatrix)
+            @animatedDice.mesh.geometry.applyMatrix(inv)
+            @animatedDice.mesh.geometry.applyMatrix(new Matrix4().makeRotationFromEuler(@animatedDice.mesh.rotation))
+            @animatedDice.mesh.geometry.verticesNeedUpdate = true
+            @animatedDice.mesh.geometry.elementsNeedUpdate = true
+            @animatedDice.mesh.geometry.normalsNeedUpdate = true
+            @animatedDice.mesh.geometry.computeFaceNormals()
 
-        @dice.mesh.position.add(@cubeRotationDir.clone().multiplyScalar(1/2))
-        @dice.mesh.position.y = DICE/2
-        @dice.mesh.rotation.set(0, 0, 0)
+            @animatedDice.mesh.position.add(@cubeRotationDir.clone().multiplyScalar(1/2))
+            @animatedDice.mesh.position.y = DICE/2
+            @animatedDice.mesh.rotation.set(0, 0, 0)
 
+        @animatedDice.mesh.position.x = Math.round(@animatedDice.mesh.position.x)
+        @animatedDice.mesh.position.z = Math.round(@animatedDice.mesh.position.z)
         @board.dices[@cubeOrigPosition.z][@cubeOrigPosition.x] = null
-        @board.dices[@dice.mesh.position.z][@dice.mesh.position.x] = @dice
+        @board.dices[@animatedDice.mesh.position.z][@animatedDice.mesh.position.x] = @animatedDice
+        console.log(@checkForNewVanishingDice(@animatedDice))
 
-        console.log(@checkForNewVanishingDice())
-
-        @cubeRotationDir = undefined
+        @playerMovementAction = null
         return true
 
-    checkForNewVanishingDice: () ->
+    checkForNewVanishingDice: (startDice) ->
         goodDices = {}
-        wantedValue = @dice.getValue()
+        wantedValue = startDice.getValue()
         return false if wantedValue == 1
 
         recurse = (x, z) =>
@@ -194,7 +231,7 @@ class Player
                 for i, dir of DIRECTIONS
                     recurse(x + dir.x, z + dir.z)
             return
-        recurse(@dice.mesh.position.x, @dice.mesh.position.z)
+        recurse(startDice.mesh.position.x, startDice.mesh.position.z)
 
         if _.size(goodDices) >= wantedValue
             for key, dice of goodDices

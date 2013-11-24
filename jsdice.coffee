@@ -39,8 +39,8 @@ $ ->
     scene.add(ambientLight)
 
     board = new Board(scene)
-    player = new Player(board)
-    board.loadLevel(LEVELS[4], player)
+    window.player = player = new Player(board)
+    board.loadLevel(LEVELS[16], player)
 
     # start the renderer
     renderer.setSize(WIDTH, HEIGHT)
